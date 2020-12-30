@@ -6,15 +6,20 @@ import http.cookiejar
 import threading
 import queue
 import itertools
+import os
 
 # Etc
 import time
 from colorama import Fore, Back, Style
+from datetime import datetime, timedelta
 
 # Global variables
 #in_filename  = 'input/3.txt'
-in_directory = './input/filtered'
-out_filename = 'output/out_filtered2.txt'
+in_directory = 'input/filtered'
+
+ts = str(datetime.now()).replace(' ', '_').replace(':', '-')
+
+out_filename = f'output/out_filtered_{ts}.txt'
 test_url = 'http://www.google.com/humans.txt'
 thread_number = 100
 timeout_value = 10
@@ -58,7 +63,6 @@ class PrintThread(threading.Thread):
         self.shutdown = True
 
 
-
 #
 # Processor
 #
@@ -72,7 +76,7 @@ class ProcessThread(threading.Thread):
     # ...
     def run(self):
         while True:
-            task   = self.task_queue.get()
+            task = self.task_queue.get()
             result = self.process(task)
 
             if result is not None:
@@ -80,7 +84,6 @@ class ProcessThread(threading.Thread):
                 next(good_proxy_num)
 
             self.task_queue.task_done()
-
 
     # Do the processing job here
     def process(self, task):
@@ -91,7 +94,7 @@ class ProcessThread(threading.Thread):
         opener = urllib.request.build_opener(
                     urllib.request.HTTPCookieProcessor(cj),
                     urllib.request.HTTPRedirectHandler(),
-                    urllib.request.ProxyHandler({ 'http' : proxy })
+                    urllib.request.ProxyHandler({'http': proxy})
         )
 
         try:
@@ -103,19 +106,21 @@ class ProcessThread(threading.Thread):
             sprint(log_msg)
             return None
 
-        log_msg += ok_msg + " Response time: %d, length=%s" % ( int((t2-t1)*1000), str(len(response)) )
+        log_msg += ok_msg + " Response time: %d, length=%s" % (int((t2-t1)*1000), str(len(response)))
         sprint(log_msg)
         return proxy
 
     def terminate(self):
-        None
+        pass
+        # None
         #print("Thread #%d is down..." % (self.id))
+
 
 #
 # Main starts here
 #
 # Init some stuff
-input_queue  = queue.Queue()
+input_queue = queue.Queue()
 result_queue = queue.Queue()
 
 
@@ -136,7 +141,7 @@ f_printer.start()
 start_time = time.time()
 
 proxy_list = []
-import os
+
 for root, dirs, files in os.walk(in_directory):
     for file in files:
         if file.endswith(".txt"):
@@ -175,34 +180,4 @@ print("In: %d. Good: %d, that's %.2f%%" % (total_proxy_num, good_proxy_num, 100.
 
 end_time = time.time()
 print("Time elapsed: %.1f seconds." % (end_time - start_time))
-print("Bye-bye!")
-
-
-
-
-
-
-
-
-
-
-
-#############
-
-
-
-
-
-
-
-
-
-
-
-
-# Read file, convert it to list of proxies.
-# Add proxies to queue
-# Launch N (10) threads
-# When writing to the file, use lock
-# When Queue is empty flash results and shutdown
-
+print("Finished")
